@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,14 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthPageSkeleton />}>
+      <AuthInner />
+    </Suspense>
+  );
+}
+
+function AuthInner() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -311,6 +319,23 @@ export default function AuthPage() {
           </a>
         </p>
       </motion.div>
+    </div>
+  );
+}
+
+// ─── Skeleton shown while Suspense resolves ───────────────────────────────────
+
+function AuthPageSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 pt-20 pb-10">
+      <div className="w-full max-w-md">
+        <div className="glass-strong rounded-2xl p-8 shadow-2xl shadow-violet-900/20 animate-pulse">
+          <div className="h-8 bg-white/10 rounded-lg mb-6" />
+          <div className="h-12 bg-white/10 rounded-lg mb-4" />
+          <div className="h-12 bg-white/10 rounded-lg mb-4" />
+          <div className="h-12 bg-white/10 rounded-lg" />
+        </div>
+      </div>
     </div>
   );
 }
