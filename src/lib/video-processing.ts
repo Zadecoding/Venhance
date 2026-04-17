@@ -25,6 +25,8 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 
+// Use bare command names — Nixpacks adds FFmpeg to PATH via Nix store.
+// Override with FFMPEG_PATH env var if using a custom installation path.
 const FFMPEG_BIN = process.env.FFMPEG_PATH || "ffmpeg";
 const FFPROBE_BIN = process.env.FFPROBE_PATH || "ffprobe";
 const MOCK_MODE = process.env.FFMPEG_MOCK_MODE === "true";
