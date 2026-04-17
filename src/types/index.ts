@@ -2,7 +2,7 @@
 export type UserPlan = "free" | "paid";
 
 // ─── Processor Engine ─────────────────────────────────────────────────────────
-export type ProcessorType = "replicate";
+export type ProcessorType = "huggingface";
 
 // ─── Job Status ───────────────────────────────────────────────────────────────
 export type VideoJobStatus =
@@ -59,7 +59,7 @@ export interface VideoJob {
   watermark: boolean;
   target_resolution: string;
   target_fps: number | null;   // user-chosen output frame rate (24/30/60) or null = keep source
-  replicate_prediction_id: string | null;
+  hf_job_id: string | null;
   queue_position: number | null;
 
   created_at: string;
@@ -105,21 +105,21 @@ export interface VideoMetadata {
 }
 
 
-// ─── Replicate Options (Paid tier) ────────────────────────────────────────────
-export interface ReplicateOptions {
-  targetResolution: "1080p" | "4k";
+// ─── HuggingFace Enhancement Options ────────────────────────────────────────
+export interface HFEnhancementOptions {
+  plan: UserPlan;
   upscaleFactor: 2 | 4;
-  faceEnhance: boolean;
-  aiDenoise: boolean;
+  fidelity: number;           // 0.0–1.0 (0 = max enhance, 1 = max fidelity)
+  backgroundEnhance: boolean;
+  faceUpsample: boolean;
 }
 
-// ─── Generic Enhancement Options (shared by both paths) ──────────────────────
+// ─── Generic Enhancement Options ─────────────────────────────────────────────
 export interface EnhancementOptions {
   upscaleResolution?: "2x" | "4x";
-  denoise?: boolean;
-  sharpen?: boolean;
-  colorEnhance?: boolean;
-  faceEnhance?: boolean;
+  fidelity?: number;
+  backgroundEnhance?: boolean;
+  faceUpsample?: boolean;
 }
 
 // ─── Enhancement Result ───────────────────────────────────────────────────────
@@ -131,20 +131,12 @@ export interface EnhancementResult {
   error?: string;
 }
 
-// ─── Replicate Prediction (API response shape) ────────────────────────────────
-export interface ReplicatePrediction {
-  id: string;
-  status: "starting" | "processing" | "succeeded" | "failed" | "canceled";
-  input: Record<string, unknown>;
-  output: string | string[] | null;
+// ─── HuggingFace Gradio Job Status ───────────────────────────────────────────
+export interface HFJobStatus {
+  jobId: string;
+  status: "pending" | "processing" | "complete" | "error";
+  output: string | null;
   error: string | null;
-  logs: string | null;
-  created_at: string;
-  completed_at: string | null;
-  urls: {
-    get: string;
-    cancel: string;
-  };
 }
 
 // ─── Queue Entry ──────────────────────────────────────────────────────────────

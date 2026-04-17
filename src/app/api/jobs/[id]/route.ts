@@ -24,7 +24,7 @@ export async function GET(
         watermark,
         target_resolution,
         queue_position,
-        replicate_prediction_id
+        hf_job_id
       `)
       .eq("id", id)
       .eq("user_id", user.id)

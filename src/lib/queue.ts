@@ -42,7 +42,7 @@ export async function enqueueJob(
   const supabase = createServiceClient();
 
   const priority = PRIORITY[plan];
-  const processor = "replicate";
+  const processor = "huggingface";
   const watermark = plan === "free";
   const targetResolution = plan === "paid" ? "1080p" : "720p";
 

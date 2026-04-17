@@ -2,27 +2,21 @@
  * job-processor.ts
  *
  * Central dispatcher for video enhancement jobs.
- * ALL tiers (free and paid) now use the Replicate pipeline.
+ * ALL tiers use the Hugging Face Spaces pipeline via @gradio/client.
  *
- * Free tier:  Replicate upscale to 720p, no face enhance, watermark added post-process
- * Paid tier:  Replicate upscale to 1080p/4K, face enhancement enabled
+ * Free tier:  HF_SPACE_FREE — 2x upscale, standard quality
+ * Paid tier:  HF_SPACE_PAID — 4x upscale, higher fidelity + background enhance
  *
  * This is the ONLY place where tier differentiation logic lives.
  * All API routes and queue workers call processJob(jobId) and nothing else.
  */
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { enhanceVideoPaid } from "@/lib/replicate-enhancement";
-import type { VideoJob, ReplicateOptions, EnhancementResult } from "@/types";
+import { enhanceWithHuggingFace } from "@/lib/huggingface-enhancement";
+import type { VideoJob, HFEnhancementOptions, EnhancementResult } from "@/types";
 
 // ─── Main Entry Point ─────────────────────────────────────────────────────────
 
-/**
- * Process a video job end-to-end.
- *
- * @param jobId  UUID of the job in video_jobs table
- * @returns      EnhancementResult with success/failure details
- */
 export async function processJob(jobId: string): Promise<EnhancementResult> {
   const supabase = createServiceClient();
 
@@ -38,13 +32,10 @@ export async function processJob(jobId: string): Promise<EnhancementResult> {
   }
 
   const typedJob = job as VideoJob;
-
-  console.log(
-    `[Processor] Processing job ${jobId} | plan=${typedJob.plan}`
-  );
+  console.log(`[Processor] Processing job ${jobId} | plan=${typedJob.plan}`);
 
   try {
-    return await processWithReplicate(typedJob, supabase);
+    return await processWithHuggingFace(typedJob, supabase);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     console.error(`[Processor] Job ${jobId} crashed:`, error);
@@ -54,12 +45,9 @@ export async function processJob(jobId: string): Promise<EnhancementResult> {
   }
 }
 
-// ─── Replicate Pipeline (all tiers) ──────────────────────────────────────────
-//
-// Free tier:  upscale to 720p equivalent (scale=2), no face enhance
-// Paid tier:  upscale to 1080p or 4K (scale=4), face enhancement enabled
+// ─── HuggingFace Pipeline ─────────────────────────────────────────────────────
 
-async function processWithReplicate(
+async function processWithHuggingFace(
   job: VideoJob,
   supabase: ReturnType<typeof createServiceClient>
 ): Promise<EnhancementResult> {
@@ -68,60 +56,38 @@ async function processWithReplicate(
   const isPaid = job.plan === "paid";
 
   await updateJobStatus(supabase, jobId, "analyzing");
-  await logStep(supabase, jobId, "analyze", "started", `Analyzing video for AI enhancement (${job.plan} tier)`);
+  await logStep(supabase, jobId, "analyze", "started", `Preparing for AI enhancement (${job.plan} tier)`);
 
-  const targetResolution = isPaid
-    ? ((job.target_resolution === "4k" ? "4k" : "1080p") as "1080p" | "4k")
-    : "720p" as "720p";
-
-  const upscaleFactor = targetResolution === "4k" ? 4 : 2;
-
-  const replicateOpts: ReplicateOptions = {
-    targetResolution: targetResolution === "720p" ? "1080p" : targetResolution, // Replicate min is 1080p; free tier uses scale=2 on shorter input
-    upscaleFactor: upscaleFactor as 2 | 4,
-    faceEnhance: isPaid,   // face enhance only for paid users
-    aiDenoise: true,
+  const hfOpts: HFEnhancementOptions = {
+    plan: job.plan,
+    upscaleFactor: isPaid ? 4 : 2,
+    fidelity: isPaid ? 0.7 : 0.5,
+    backgroundEnhance: true,
+    faceUpsample: true,
   };
 
   await updateJobStatus(supabase, jobId, "enhancing");
   await logStep(
     supabase,
     jobId,
-    "replicate",
+    "hf_enhance",
     "started",
-    `Replicate AI pipeline | target=${targetResolution} | faceEnhance=${isPaid}`
+    `HuggingFace Space | plan=${job.plan} | upscale=${hfOpts.upscaleFactor}x | fidelity=${hfOpts.fidelity}`
   );
 
-  const result = await enhanceVideoPaid(
+  const result = await enhanceWithHuggingFace(
     jobId,
     job.original_video_url || "",
-    replicateOpts,
-    async (step, prediction) => {
-      if (prediction.status === "processing") {
-        await logStep(
-          supabase,
-          jobId,
-          `replicate_${step}`,
-          "started",
-          `Replicate ${step}: ${prediction.status} (id=${prediction.id})`
-        );
-      }
-      if (step === "upscale" && prediction.id) {
-        await supabase
-          .from("video_jobs")
-          .update({ replicate_prediction_id: prediction.id })
-          .eq("id", jobId);
-      }
-    }
+    hfOpts
   );
 
   if (!result.success) {
     await updateJobStatus(supabase, jobId, "failed", result.error);
-    await logStep(supabase, jobId, "replicate", "failed", result.error || "Replicate failed");
+    await logStep(supabase, jobId, "hf_enhance", "failed", result.error || "HF Space failed");
     return result;
   }
 
-  await logStep(supabase, jobId, "replicate", "completed", "AI enhancement complete");
+  await logStep(supabase, jobId, "hf_enhance", "completed", "AI enhancement complete");
   await updateJobStatus(supabase, jobId, "rendering");
   await logStep(supabase, jobId, "render", "started", "Finalizing output");
 

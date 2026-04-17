@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
         status: "pending",   // starts in queue
         plan: userPlan,      // snapshot the plan at time of upload
         priority: userPlan === "paid" ? 10 : 1,
-        processor: userPlan === "paid" ? (process.env.PAID_PROCESSOR || "replicate") : "ffmpeg",
+        processor: "huggingface",
         watermark: userPlan === "free",
         target_resolution: userPlan === "paid" ? "1080p" : "720p",
         target_fps: targetFps,            // user-chosen output frame rate (null = keep source)
