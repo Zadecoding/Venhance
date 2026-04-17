@@ -1,8 +1,7 @@
 # nixpacks.toml — Railway Nixpacks build configuration
-# Installs FFmpeg system package so free-tier video processing works
 
 [phases.setup]
-nixPkgs = ["ffmpeg"]
+nixPkgs = ["nodejs_20", "ffmpeg"]
 
 [phases.install]
 cmds = ["npm ci"]
