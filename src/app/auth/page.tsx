@@ -57,7 +57,9 @@ function AuthInner() {
           password: form.password,
           options: {
             data: { full_name: form.name },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            // Use the canonical app URL (env var) so Supabase redirects to
+            // production — not Railway's internal localhost:8080
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
           },
         });
         if (error) throw error;
@@ -87,9 +89,8 @@ function AuthInner() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
           queryParams: {
-            // Request refresh token so sessions persist longer
             access_type: "offline",
             prompt: "consent",
           },
