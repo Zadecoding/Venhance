@@ -23,34 +23,45 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
-      // Ensure profile row exists (new Google sign-ups bypass the signup trigger
-      // if the trigger fires before the session is available).
-      // We upsert idempotently so existing profiles are not overwritten.
+      let isNewUser = false;
+
       try {
         const serviceClient = createServiceClient();
-        await serviceClient
+
+        // Check if profile already exists (returning user)
+        const { data: existingProfile } = await serviceClient
           .from("profiles")
-          .upsert(
-            {
-              id: data.user.id,
-              email: data.user.email,
-              full_name:
-                data.user.user_metadata?.full_name ||
-                data.user.user_metadata?.name ||
-                null,
-              avatar_url: data.user.user_metadata?.avatar_url || null,
-              plan: "free",
-            },
-            { onConflict: "id", ignoreDuplicates: true }
-          );
+          .select("id")
+          .eq("id", data.user.id)
+          .single();
+
+        isNewUser = !existingProfile;
+
+        // Create profile for new users
+        if (isNewUser) {
+          await serviceClient.from("profiles").insert({
+            id: data.user.id,
+            email: data.user.email,
+            full_name:
+              data.user.user_metadata?.full_name ||
+              data.user.user_metadata?.name ||
+              null,
+            avatar_url: data.user.user_metadata?.avatar_url || null,
+            plan: "free",
+          });
+        }
       } catch (profileErr) {
         // Non-fatal — profile trigger should have handled it
         console.warn("[Auth Callback] Profile upsert failed:", profileErr);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // New users → pricing page to choose a plan
+      // Returning users → dashboard (or ?next= param)
+      const redirectTo = isNewUser ? `${origin}/pricing?new=1` : `${origin}${next}`;
+      return NextResponse.redirect(redirectTo);
     }
   }
 
   return NextResponse.redirect(`${origin}/auth?error=auth_callback_failed`);
 }
+

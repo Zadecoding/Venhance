@@ -70,6 +70,11 @@ export default function UploadPage() {
 
       if (!uploadRes.ok) {
         const err = await uploadRes.json();
+        if (uploadRes.status === 429 && err.limitReached) {
+          toast.error("Monthly limit reached! Redirecting to upgrade...", { duration: 3000 });
+          setTimeout(() => { window.location.href = "/pricing"; }, 1500);
+          return;
+        }
         throw new Error(err.error || "Upload failed");
       }
 

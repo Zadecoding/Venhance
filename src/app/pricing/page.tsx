@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Check, Zap, Star, ArrowRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { Check, Zap, Star, ArrowRight, Building2, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -11,50 +13,52 @@ const plans = [
     name: "Free",
     price: "₹0",
     period: "/month",
-    description: "Perfect for trying out VEnhance",
+    description: "Try VEnhance with no commitment",
     features: [
       "3 video enhancements/month",
-      "Up to 2x upscaling",
-      "720p output quality",
+      "Up to 720p output quality",
       "100MB max file size",
       "Standard processing queue",
       "Basic denoising & sharpening",
+      "Watermark on output",
     ],
-    cta: "Get Started Free",
-    href: "/auth",
-    gradient: "from-zinc-800 to-zinc-900",
+    cta: "Start for Free",
+    href: "/dashboard",
+    gradient: "from-zinc-700 to-zinc-800",
     popular: false,
+    enterprise: false,
   },
   {
     name: "Pro",
-    price: "₹1,499",
+    price: "₹499",
     period: "/month",
     description: "For serious content creators",
     features: [
       "Unlimited enhancements",
       "Up to 4x upscaling",
-      "4K output quality",
+      "1080p / 4K output quality",
       "500MB max file size",
       "Priority processing queue",
-      "Advanced denoising & sharpening",
+      "Advanced AI denoising & sharpening",
       "Color enhancement",
-      "Video stabilization",
+      "No watermark",
       "Email support",
     ],
-    cta: "Start Pro Trial",
+    cta: "Start Pro",
     href: "/auth",
     gradient: "from-violet-900 to-purple-900",
     popular: true,
+    enterprise: false,
   },
   {
     name: "Enterprise",
-    price: "₹7,999",
-    period: "/month",
+    price: "Custom",
+    period: "",
     description: "For studios and production houses",
     features: [
       "Everything in Pro",
       "Up to 8x upscaling",
-      "8K output quality",
+      "Up to 8K output quality",
       "2GB max file size",
       "Dedicated processing lane",
       "Batch processing API",
@@ -64,21 +68,44 @@ const plans = [
       "White-label options",
     ],
     cta: "Contact Sales",
-    href: "/auth",
+    href: "mailto:sales@venhance.io",
     gradient: "from-cyan-900 to-blue-900",
     popular: false,
+    enterprise: true,
   },
 ];
 
-export default function PricingPage() {
+function PricingContent() {
+  const searchParams = useSearchParams();
+  const isNew = searchParams.get("new") === "1";
+
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="gradient-orb w-96 h-96 bg-violet-900/20 top-0 left-1/2 -translate-x-1/2" />
+        <div className="gradient-orb w-64 h-64 bg-cyan-900/15 bottom-1/4 right-0" />
       </div>
 
       <div className="relative max-w-6xl mx-auto">
+        {/* Welcome Banner for new users */}
+        {isNew && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10 mx-auto max-w-2xl"
+          >
+            <div className="glass rounded-2xl p-5 border border-violet-500/30 bg-violet-500/10 text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-xs font-semibold mb-3">
+                <Zap className="w-3 h-3" />
+                Welcome to VEnhance!
+              </div>
+              <p className="text-white font-semibold text-lg mb-1">Choose your plan to get started</p>
+              <p className="text-zinc-400 text-sm">You can always upgrade later from your settings.</p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -87,7 +114,7 @@ export default function PricingPage() {
         >
           <h1 className="text-5xl font-bold text-white mb-4">Simple, Transparent Pricing</h1>
           <p className="text-zinc-400 text-lg max-w-xl mx-auto">
-            Choose the plan that fits your creative workflow. Start free, upgrade when you need more.
+            Start free with 3 enhancements/month. Upgrade anytime for unlimited AI-powered video enhancement.
           </p>
         </motion.div>
 
@@ -112,24 +139,39 @@ export default function PricingPage() {
               <Card className={`h-full ${plan.popular ? "border-violet-500/40 shadow-2xl shadow-violet-900/30" : "border-white/10"}`}>
                 <CardContent className="p-7">
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center mb-4`}>
-                    <Zap className="w-5 h-5 text-white" />
+                    {plan.enterprise ? (
+                      <Building2 className="w-5 h-5 text-white" />
+                    ) : (
+                      <Zap className="w-5 h-5 text-white" />
+                    )}
                   </div>
                   <h2 className="text-xl font-bold text-white mb-1">{plan.name}</h2>
                   <p className="text-sm text-zinc-500 mb-4">{plan.description}</p>
                   <div className="flex items-baseline gap-1 mb-6">
                     <span className="text-4xl font-black text-white">{plan.price}</span>
-                    <span className="text-zinc-500 text-sm">{plan.period}</span>
+                    {plan.period && (
+                      <span className="text-zinc-500 text-sm">{plan.period}</span>
+                    )}
                   </div>
 
-                  <Link href={plan.href}>
-                    <Button
-                      className={`w-full gap-2 mb-6 ${plan.popular ? "" : "variant-outline"}`}
-                      variant={plan.popular ? "default" : "outline"}
-                    >
-                      {plan.cta}
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  {plan.enterprise ? (
+                    <a href={plan.href}>
+                      <Button variant="outline" className="w-full gap-2 mb-6">
+                        <Phone className="w-4 h-4" />
+                        {plan.cta}
+                      </Button>
+                    </a>
+                  ) : (
+                    <Link href={plan.href}>
+                      <Button
+                        className={`w-full gap-2 mb-6 ${!plan.popular ? "variant-outline" : ""}`}
+                        variant={plan.popular ? "default" : "outline"}
+                      >
+                        {plan.cta}
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  )}
 
                   <div className="space-y-2.5">
                     {plan.features.map((feature) => (
@@ -156,20 +198,20 @@ export default function PricingPage() {
           <div className="space-y-4">
             {[
               {
+                q: "What happens when I hit the 3 video limit?",
+                a: "Free users get 3 video enhancements per month. Once used, you'll need to wait until next month or upgrade to Pro for unlimited enhancements.",
+              },
+              {
                 q: "What video formats are supported?",
-                a: "We support MP4, MOV, WebM, AVI, and MKV. Output is always H.265 MP4 for maximum quality and compatibility.",
+                a: "We support MP4, MOV, WebM, AVI, and MKV. Output is always H.264 MP4 for maximum quality and compatibility.",
               },
               {
                 q: "How long does enhancement take?",
                 a: "Processing time depends on video length and selected upscale factor. Most videos under 5 minutes complete in 2–10 minutes.",
               },
               {
-                q: "Can I swap the AI provider later?",
-                a: "Yes! Our service layer is abstracted so you can integrate Topaz AI, Runway ML, Replicate, or any custom endpoint without changing the UI.",
-              },
-              {
                 q: "Is my video data secure?",
-                a: "All videos are stored with end-to-end encryption in Supabase Storage with private bucket policies. Videos are only accessible to you.",
+                a: "All videos are stored with private bucket policies in Supabase Storage. Videos are only accessible to you via signed URLs.",
               },
             ].map((faq) => (
               <div key={faq.q} className="glass rounded-xl p-5">
@@ -181,5 +223,13 @@ export default function PricingPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <PricingContent />
+    </Suspense>
   );
 }

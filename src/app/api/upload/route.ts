@@ -37,6 +37,33 @@ export async function POST(request: NextRequest) {
     // ── Plan-aware rate limiting ───────────────────────────────────────────────
     const isPaid = userPlan === "paid";
 
+    // ── Monthly limit for free users (3 videos/month) ─────────────────────────
+    if (!isPaid) {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const { count: monthlyCount } = await supabase
+        .from("video_jobs")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", monthStart);
+
+      const FREE_MONTHLY_LIMIT = 3;
+      if ((monthlyCount || 0) >= FREE_MONTHLY_LIMIT) {
+        return NextResponse.json(
+          {
+            error: `Monthly limit reached. Free users can enhance ${FREE_MONTHLY_LIMIT} videos per month. Upgrade to Pro for unlimited enhancements.`,
+            limitReached: true,
+            plan: "free",
+            used: monthlyCount,
+            limit: FREE_MONTHLY_LIMIT,
+          },
+          { status: 429 }
+        );
+      }
+    }
+
+    // ── Hourly rate limit (anti-abuse) ────────────────────────────────────────
     // Free: max 10 uploads/hour | Paid: max 100 uploads/hour
     const windowMs = 3_600_000; // 1 hour
     const rateLimit = isPaid ? 100 : 10;
@@ -57,6 +84,7 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
+
 
     // ── Parse form data ───────────────────────────────────────────────────────
     const formData = await request.formData();
