@@ -1,8 +1,9 @@
 /**
  * POST /api/process
  *
- * Trigger processing for a single job.
- * Routes to FFmpeg (free) or Replicate (paid) via processJob().
+ * Trigger processing for a single job via Replicate.
+ * Free tier: 2x upscale, no face enhance.
+ * Paid tier: 4x upscale + face enhance.
  *
  * Body: { jobId: string }
  *

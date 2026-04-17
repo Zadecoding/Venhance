@@ -2,7 +2,7 @@
 export type UserPlan = "free" | "paid";
 
 // ─── Processor Engine ─────────────────────────────────────────────────────────
-export type ProcessorType = "ffmpeg" | "replicate" | "runpod";
+export type ProcessorType = "replicate";
 
 // ─── Job Status ───────────────────────────────────────────────────────────────
 export type VideoJobStatus =
@@ -104,17 +104,6 @@ export interface VideoMetadata {
   resolution: string;
 }
 
-// ─── FFmpeg Options (Free tier) ───────────────────────────────────────────────
-export interface FFmpegOptions {
-  maxHeight: number;        // 720 for free
-  denoise: boolean;
-  sharpen: boolean;
-  watermark: boolean;
-  watermarkText?: string;
-  targetFps?: number;       // e.g. 24, 30, 60 — if undefined, keep source fps
-  deblur?: boolean;         // apply strong deblur filter
-}
-
 
 // ─── Replicate Options (Paid tier) ────────────────────────────────────────────
 export interface ReplicateOptions {
@@ -126,12 +115,11 @@ export interface ReplicateOptions {
 
 // ─── Generic Enhancement Options (shared by both paths) ──────────────────────
 export interface EnhancementOptions {
-  upscaleResolution?: "2x" | "4x" | "8x";
+  upscaleResolution?: "2x" | "4x";
   denoise?: boolean;
   sharpen?: boolean;
-  stabilize?: boolean;
   colorEnhance?: boolean;
-  fps?: number;
+  faceEnhance?: boolean;
 }
 
 // ─── Enhancement Result ───────────────────────────────────────────────────────

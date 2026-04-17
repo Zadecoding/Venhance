@@ -42,9 +42,7 @@ export async function enqueueJob(
   const supabase = createServiceClient();
 
   const priority = PRIORITY[plan];
-  const processor = plan === "paid"
-    ? (process.env.PAID_PROCESSOR || "replicate")
-    : "ffmpeg";
+  const processor = "replicate";
   const watermark = plan === "free";
   const targetResolution = plan === "paid" ? "1080p" : "720p";
 
