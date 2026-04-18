@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS public.video_jobs (
 
   -- Which processing engine was used
   processor       TEXT NOT NULL DEFAULT 'ffmpeg'
-                  CHECK (processor IN ('ffmpeg', 'replicate', 'runpod')),
+                  CHECK (processor IN ('ffmpeg', 'replicate', 'runpod', 'huggingface')),
 
   -- Watermark applied (only on free tier)
   watermark       BOOLEAN NOT NULL DEFAULT true,

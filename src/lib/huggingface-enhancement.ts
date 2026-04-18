@@ -65,13 +65,14 @@ async function enhanceFree(inputUrl: string): Promise<string> {
     token: HF_TOKEN as `hf_${string}` | undefined,
   });
 
-  const result = await client.predict("/enhance", {
-    image: inputBlob,
-    codeformer_fidelity: 0.5,    // lower fidelity = more enhancement (0=max enhance, 1=max fidelity)
-    background_enhance: true,
-    face_upsample: true,
-    upscale: 2,                  // 2x upscale for free tier
-  });
+  const result = await client.predict("/inference", [
+    inputBlob,
+    true, // pre_face_align
+    true, // background_enhance
+    true, // face_upsample
+    2,    // rescaling_factor
+    0.5,  // codeformer_fidelity
+  ]);
 
   const outputs = result.data as Array<{ url?: string; orig_name?: string } | string>;
   const output = outputs?.[0];
@@ -99,13 +100,14 @@ async function enhancePaid(inputUrl: string): Promise<string> {
     token: HF_TOKEN as `hf_${string}` | undefined,
   });
 
-  const result = await client.predict("/enhance", {
-    image: inputBlob,
-    codeformer_fidelity: 0.7,   // higher fidelity for paid — more natural result
-    background_enhance: true,
-    face_upsample: true,
-    upscale: 4,                 // 4x upscale for paid tier
-  });
+  const result = await client.predict("/inference", [
+    inputBlob,
+    true, // pre_face_align
+    true, // background_enhance
+    true, // face_upsample
+    4,    // rescaling_factor
+    0.7,  // codeformer_fidelity
+  ]);
 
   const outputs = result.data as Array<{ url?: string; orig_name?: string } | string>;
   const output = outputs?.[0];
