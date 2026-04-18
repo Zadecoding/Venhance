@@ -25,25 +25,12 @@
  * Upgrade the Space to T4 GPU for faster processing.
  */
 
-import { Client } from "@gradio/client";
+import { Client, handle_file } from "@gradio/client";
 import type { EnhancementResult, VideoMetadata, HFEnhancementOptions } from "@/types";
 
 const HF_TOKEN = process.env.HF_TOKEN; // optional — needed for private spaces
 const HF_SPACE_FREE = process.env.HF_SPACE_FREE || "sczhou/CodeFormer";
 const HF_SPACE_PAID = process.env.HF_SPACE_PAID || "sczhou/CodeFormer";
-
-// ─── Download helper ──────────────────────────────────────────────────────────
-
-/**
- * Fetch a remote URL and return it as a Blob for Gradio file upload.
- */
-async function fetchAsBlob(url: string): Promise<Blob> {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch input media: ${res.status} ${res.statusText}`);
-  }
-  return res.blob();
-}
 
 // ─── Free Tier — CodeFormer (public space, no token required) ─────────────────
 
@@ -59,14 +46,14 @@ async function fetchAsBlob(url: string): Promise<Blob> {
 async function enhanceFree(inputUrl: string): Promise<string> {
   console.log(`[HF] Free enhancement via ${HF_SPACE_FREE}`);
 
-  const inputBlob = await fetchAsBlob(inputUrl);
+  const imageInput = handle_file(inputUrl);
 
   const client = await Client.connect(HF_SPACE_FREE, {
     token: HF_TOKEN as `hf_${string}` | undefined,
   });
 
   const result = await client.predict("/inference", [
-    inputBlob,
+    imageInput,
     true, // pre_face_align
     true, // background_enhance
     true, // face_upsample
@@ -94,14 +81,14 @@ async function enhanceFree(inputUrl: string): Promise<string> {
 async function enhancePaid(inputUrl: string): Promise<string> {
   console.log(`[HF] Paid enhancement via ${HF_SPACE_PAID}`);
 
-  const inputBlob = await fetchAsBlob(inputUrl);
+  const imageInput = handle_file(inputUrl);
 
   const client = await Client.connect(HF_SPACE_PAID, {
     token: HF_TOKEN as `hf_${string}` | undefined,
   });
 
   const result = await client.predict("/inference", [
-    inputBlob,
+    imageInput,
     true, // pre_face_align
     true, // background_enhance
     true, // face_upsample
