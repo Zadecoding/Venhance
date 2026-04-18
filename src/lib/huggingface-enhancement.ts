@@ -52,13 +52,9 @@ async function enhanceFree(inputUrl: string): Promise<string> {
     token: HF_TOKEN as `hf_${string}` | undefined,
   });
 
-  const result = await client.predict("/inference", [
+  const result = await client.predict("/predict", [
     imageInput,
-    true, // pre_face_align
-    true, // background_enhance
-    true, // face_upsample
-    2,    // rescaling_factor
-    0.5,  // codeformer_fidelity
+    30, // Default to 30 FPS for free tier output
   ]);
 
   const outputs = result.data as Array<{ url?: string; orig_name?: string } | string>;
@@ -87,13 +83,9 @@ async function enhancePaid(inputUrl: string): Promise<string> {
     token: HF_TOKEN as `hf_${string}` | undefined,
   });
 
-  const result = await client.predict("/inference", [
+  const result = await client.predict("/predict", [
     imageInput,
-    true, // pre_face_align
-    true, // background_enhance
-    true, // face_upsample
-    4,    // rescaling_factor
-    0.7,  // codeformer_fidelity
+    60, // 60 FPS for paid tier output
   ]);
 
   const outputs = result.data as Array<{ url?: string; orig_name?: string } | string>;
